@@ -1,0 +1,98 @@
+const byte TRIG_PIN = 6;
+const byte ECHO_PIN = 8;
+
+const byte LED_LAMP_RED = 9;
+const byte LED_LAMP_YELLOW = 10;
+const byte LED_LAMP_GREEN = 11;
+
+const byte SOUND_BUZZER = 3;
+
+int sound = 500; // Frequenz von 500 Hz für den Summer
+unsigned long dauer;        // Vom Sensor gemessene Zeit
+unsigned long entfernung;   // Berechnete Entfernung in cm
+unsigned long redStartTime = 0;  // Zeitstempel, wenn die rote LED eingeschaltet wird
+
+void setup() {
+  Serial.begin(9600);  // Serielle Kommunikation starten
+
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  pinMode(LED_LAMP_RED, OUTPUT);
+  pinMode(LED_LAMP_YELLOW, OUTPUT);
+  pinMode(LED_LAMP_GREEN, OUTPUT);
+  pinMode(SOUND_BUZZER, OUTPUT);
+}
+
+void loop() {
+  // Trigger-Puls erzeugen
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  // Echo-Zeit messen
+  dauer = pulseIn(ECHO_PIN, HIGH, 20000); // Timeout von 20 ms
+  if (dauer == 0) {
+    Serial.println("Keine Antwort vom Sensor");
+    noTone(SOUND_BUZZER);
+    ledsAusschalten();
+    delay(300);
+    return;
+  }
+
+  // Entfernung in Zentimeter berechnen
+  entfernung = (dauer / 2) * 0.03432;
+
+  // Entfernung anzeigen
+  Serial.print("Entfernung: ");
+  Serial.print(entfernung);
+  Serial.println(" cm");
+
+  // LEDs und Summer steuern
+  ledsUndSummerSteuern();
+
+  delay(300);  // Kurze Pause vor der nächsten Messung
+}
+
+void ledsUndSummerSteuern() {
+  if (entfernung < 20) {
+    if (redStartTime == 0) {
+      redStartTime = millis(); // Zeitstempel setzen
+    }
+    if (millis() - redStartTime > 300000) { // 5 Minuten
+      Serial.println("ALARM: Rote LED ist seit 5 Minuten aktiv");
+    }
+    digitalWrite(LED_LAMP_RED, HIGH);
+    digitalWrite(LED_LAMP_YELLOW, LOW);
+    digitalWrite(LED_LAMP_GREEN, LOW);
+    tone(SOUND_BUZZER, sound);
+
+  } else if (entfernung < 45) {
+    redStartTime = 0; // Zeitstempel zurücksetzen
+    digitalWrite(LED_LAMP_RED, LOW);
+    digitalWrite(LED_LAMP_YELLOW, HIGH);
+    digitalWrite(LED_LAMP_GREEN, LOW);
+    noTone(SOUND_BUZZER);
+
+  } else if (entfernung < 70) {
+    redStartTime = 0; // Zeitstempel zurücksetzen
+    digitalWrite(LED_LAMP_RED, LOW);
+    digitalWrite(LED_LAMP_YELLOW, LOW);
+    digitalWrite(LED_LAMP_GREEN, HIGH);
+    noTone(SOUND_BUZZER);
+
+  } else {
+    redStartTime = 0; // Zeitstempel zurücksetzen
+    ledsAusschalten();
+    noTone(SOUND_BUZZER);
+  }
+}
+
+// Funktion, um alle LEDs auszuschalten
+void ledsAusschalten() {
+  digitalWrite(LED_LAMP_RED, LOW);
+  digitalWrite(LED_LAMP_YELLOW, LOW);
+  digitalWrite(LED_LAMP_GREEN, LOW);
+}

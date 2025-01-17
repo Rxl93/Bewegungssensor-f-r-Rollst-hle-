@@ -1,0 +1,39 @@
+import serial
+import time
+import telebot
+
+# Telegram Bot Token and Chat ID
+TELEGRAM_BOT_TOKEN = '7015872839:AAFBmQ-3QeSDbudGgQhvK3xgH1hQB5LrJak'
+CHAT_ID = '1593426615'
+
+# Initialize the bot
+bot = telebot.TeleBot('7015872839:AAFBmQ-3QeSDbudGgQhvK3xgH1hQB5LrJak')
+
+# Serial port configuration
+arduino = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+time.sleep(2)  # Allow some time for the connection to establish
+
+# Variables to track the red LED state
+red_led_start_time = None
+red_led_duration_threshold = 1 * 10  # 5 minutes in seconds
+
+def send_telegram_message(message):
+    """Send a message to the Telegram bot."""
+    bot.send_message(1593426615, message)
+
+try:
+    while True:
+        if arduino.in_waiting > 0:
+            # Read a line from Arduino
+            line = arduino.readline().decode('utf-8').strip()
+            print(f"Received: {line}")
+
+            # Check for red LED active message
+            if "ALARM: HELP!!" in line:
+                send_telegram_message("Alert: Red LED has been active for 5 minutes!")
+        
+        time.sleep(1)  # Adjust to your desired reading frequency
+
+except KeyboardInterrupt:
+    print("Program terminated.")
+    arduino.close()
