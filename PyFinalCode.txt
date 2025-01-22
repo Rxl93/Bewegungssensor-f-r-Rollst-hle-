@@ -15,7 +15,7 @@ time.sleep(2)  # Allow some time for the connection to establish
 
 # Variables to track the red LED state
 red_led_start_time = None
-red_led_duration_threshold = 1 * 10  # 5 minutes in seconds
+red_led_duration_threshold = 1 * 5  # 5 minutes in seconds
 
 def send_telegram_message(message):
     """Send a message to the Telegram bot."""
